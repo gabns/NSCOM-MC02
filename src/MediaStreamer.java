@@ -15,34 +15,50 @@ public class MediaStreamer {
     }
 
     // Real-time Microphone Feature
+// Real-time Microphone Feature (with on-the-fly conversion)
     public void startMicSender(InetAddress dest, int port) {
         new Thread(() -> {
             try (DatagramSocket rtpSocket = new DatagramSocket()) {
                 
-                // Standard 8000Hz, 8-bit, Mono PCM Signed format
-                AudioFormat format = new AudioFormat(8000, 8, 1, true, false);
-                DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+                // 1. Ask the hardware for a standard format it actually supports (44.1kHz, 16-bit, Mono)
+                AudioFormat hardwareFormat = new AudioFormat(44100, 16, 1, true, false);
+                DataLine.Info info = new DataLine.Info(TargetDataLine.class, hardwareFormat);
 
                 if (!AudioSystem.isLineSupported(info)) {
-                    System.out.println("Microphone line not supported!");
+                    System.out.println("Microphone hardware format not supported!");
                     return;
                 }
 
                 TargetDataLine mic = (TargetDataLine) AudioSystem.getLine(info);
-                mic.open(format);
+                mic.open(hardwareFormat);
                 mic.start();
 
-                System.out.println("Microphone RTP Sender Started. Streaming live audio to port: " + port);
+                System.out.println("Microphone active. Converting live audio to 8000Hz 8-bit...");
+
+                
+                AudioInputStream rawMicStream = new AudioInputStream(mic);
+
+                
+                AudioFormat targetFormat = new AudioFormat(8000, 8, 1, true, false);
+
+                
+                AudioInputStream convertedMicStream = AudioSystem.getAudioInputStream(targetFormat, rawMicStream);
 
                 byte[] buffer = new byte[160];
                 int seqNum = 0;
                 int timestamp = 0;
-                int ssrc = 99999; // Different SSRC for mic
+                int ssrc = 99999; 
 
-                while (isRunning) {
-                    int bytesRead = mic.read(buffer, 0, buffer.length);
+                int bytesRead;
+                
+                // 5. Read from the converted stream instead of the raw mic
+                while (isRunning && (bytesRead = convertedMicStream.read(buffer, 0, buffer.length)) != -1) {
                     if (bytesRead > 0) {
-                        RtpPacket rtp = new RtpPacket(seqNum, timestamp, ssrc, buffer);
+                        // Prevent buffer bleed
+                        byte[] actualData = new byte[bytesRead];
+                        System.arraycopy(buffer, 0, actualData, 0, bytesRead);
+
+                        RtpPacket rtp = new RtpPacket(seqNum, timestamp, ssrc, actualData);
                         byte[] packetData = rtp.toNetworkBytes();
 
                         DatagramPacket packet = new DatagramPacket(packetData, packetData.length, dest, port);
@@ -50,9 +66,15 @@ public class MediaStreamer {
 
                         seqNum++;
                         timestamp += 160;
+                        
+                        // Note: No Thread.sleep() needed here! 
+                        // The physical microphone paces the loop in real-time automatically.
                     }
                 }
 
+                // Cleanup resources
+                convertedMicStream.close();
+                rawMicStream.close();
                 mic.drain();
                 mic.close();
                 System.out.println("Microphone stream finished.");
