@@ -4,7 +4,6 @@ public class RtpPacket {
     private byte[] payload;
 
     public RtpPacket(int seqNum, int timestamp, int ssrc, byte[] data) {
-        // TODO: Bit-shift seqNum and timestamp into the 12-byte header 
         header[0] = (byte) 0x80; // Version 2, padding 0, extension 0, CSRC count 0
         header[1] = (byte) 0x00; // Marker 0, Payload Type 0 (PCMU)
 
@@ -28,7 +27,6 @@ public class RtpPacket {
     }
 
     public byte[] toNetworkBytes() {
-        // TODO: Return combined header + payload 
         byte[] packet = new byte[header.length + payload.length];
         System.arraycopy(header, 0, packet, 0, header.length);
         System.arraycopy(payload, 0, packet, header.length, payload.length);
