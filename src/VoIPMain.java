@@ -33,7 +33,6 @@ public class VoIPMain {
 
                     System.out.println("\nInitiating Call...");
                     
-                    // These 3 lines were missing!
                     SipClient sipClient = new SipClient(0); 
                     sipClient.sendInvite(remoteIp, remoteSipPort, localRtpPort);
                     int remoteRtpPort = sipClient.processResponse();
