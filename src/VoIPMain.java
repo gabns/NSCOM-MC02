@@ -19,8 +19,8 @@ public class VoIPMain {
 
             try {
                 if (mode.equals("caller")) {
-                    System.out.print("Enter Remote SIP IP Address (e.g., 127.0.0.1): ");
-                    String remoteIp = scanner.nextLine().trim();
+                    String remoteIp = "127.0.0.1"; 
+                    System.out.println("Using fixed Remote SIP IP: " + remoteIp);
                     
                     System.out.print("Enter Remote SIP Port (e.g., 5060): ");
                     int remoteSipPort = Integer.parseInt(scanner.nextLine().trim());

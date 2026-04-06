@@ -70,13 +70,13 @@ public class MediaStreamer {
 
                 System.out.println("File RTP Sender Thread Started. Streaming to port: " + port);
                 
-                // 1. Get the original format of the uploaded file
+                //get original audio format
                 AudioInputStream originalStream = AudioSystem.getAudioInputStream(audioFile);
                 
-                // 2. Define the format your RTP stream requires (8kHz, 8-bit, Mono, Signed)
+                //define target/acceptable format
                 AudioFormat targetFormat = new AudioFormat(8000, 8, 1, true, false);
                 
-                // 3. Ask Java to dynamically convert the original stream into your target format
+                //convert into streamable format
                 AudioInputStream convertedStream = AudioSystem.getAudioInputStream(targetFormat, originalStream);
                 
                 byte[] buffer = new byte[160];
@@ -84,15 +84,17 @@ public class MediaStreamer {
                 int timestamp = 0;
                 int ssrc = 12345;
 
-                // 4. Read directly from the converted stream (WAV header is automatically ignored)
+                //read from converted stream and send
+                long startTime = System.currentTimeMillis();
+                long packetsSent = 0;
                 int bytesRead;
+
                 while (isRunning && (bytesRead = convertedStream.read(buffer, 0, buffer.length)) != -1) {
-                    
                     if (bytesRead > 0) {
-                        // Prevent buffer bleed by copying exactly what was read
+                        //prevent buffer bleed
                         byte[] actualData = new byte[bytesRead];
                         System.arraycopy(buffer, 0, actualData, 0, bytesRead);
-                        
+        
                         RtpPacket rtp = new RtpPacket(seqNum, timestamp, ssrc, actualData);
                         byte[] packetData = rtp.toNetworkBytes();
 
@@ -101,10 +103,18 @@ public class MediaStreamer {
 
                         seqNum++;
                         timestamp += 160;
+                        packetsSent++; //track num of sent packets
 
-                        Thread.sleep(20); // Maintain real-time playback speed
-                    }
-                }
+                        //drift compensation 
+                        long targetTime = startTime + (packetsSent * 20);
+                        long sleepTime = targetTime - System.currentTimeMillis();
+
+                        //sleep only if ahead 
+                        if (sleepTime > 0) {
+                        Thread.sleep(sleepTime);
+        }
+    }
+}
                 
                 convertedStream.close();
                 originalStream.close();

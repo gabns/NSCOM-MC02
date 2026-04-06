@@ -5,6 +5,8 @@ public class SipClient {
     private InetAddress remoInetAddress;
     private int remotePort;
     
+    private final String FIXED_LOCAL_IP = "127.0.0.1";
+    
     public SipClient(int localPort) throws SocketException {
         this.socket = new DatagramSocket(localPort);
     }
@@ -40,9 +42,9 @@ public class SipClient {
 
             // Construct 200 OK with Callee's SDP
             String sdp = "v=0\r\n" +
-                         "o=- 0 0 IN IP4 " + InetAddress.getLocalHost().getHostAddress() + "\r\n" +
+                         "o=- 0 0 IN IP4 " + FIXED_LOCAL_IP + "\r\n" +
                          "s=Sip Call\r\n" +
-                         "c=IN IP4 " + InetAddress.getLocalHost().getHostAddress() + "\r\n" +
+                         "c=IN IP4 " + FIXED_LOCAL_IP + "\r\n" +
                          "t=0 0\r\n" +
                          "m=audio " + localRtpPort + " RTP/AVP 0\r\n" +
                          "a=rtpmap:0 PCMU/8000\r\n";
@@ -50,7 +52,7 @@ public class SipClient {
             String okResponse = "SIP/2.0 200 OK\r\n" +
                                 "Via: SIP/2.0/UDP " + this.remoInetAddress.getHostAddress() + ":" + this.remotePort + "\r\n" +
                                 "From: <sip:caller@" + this.remoInetAddress.getHostAddress() + ">;tag=12345\r\n" +
-                                "To: <sip:callee@" + InetAddress.getLocalHost().getHostAddress() + ">;tag=67890\r\n" +
+                                "To: <sip:callee@" + FIXED_LOCAL_IP + ">;tag=67890\r\n" +
                                 "Call-ID: 1234567890@client\r\n" +
                                 "CSeq: 1 INVITE\r\n" +
                                 "Content-Type: application/sdp\r\n" +
@@ -85,7 +87,7 @@ public class SipClient {
             String okResponse = "SIP/2.0 200 OK\r\n" +
                                 "Via: SIP/2.0/UDP " + this.remoInetAddress.getHostAddress() + ":" + this.remotePort + "\r\n" +
                                 "From: <sip:caller@" + this.remoInetAddress.getHostAddress() + ">;tag=12345\r\n" +
-                                "To: <sip:callee@" + InetAddress.getLocalHost().getHostAddress() + ">;tag=67890\r\n" +
+                                "To: <sip:callee@" + FIXED_LOCAL_IP + ">;tag=67890\r\n" +
                                 "Call-ID: 1234567890@client\r\n" +
                                 "CSeq: 2 BYE\r\n\r\n";
             byte[] msg = okResponse.getBytes();
@@ -100,16 +102,16 @@ public class SipClient {
         this.remotePort = remoteSipPort;
         
         String sdp = "v=0\r\n" +
-                     "o=- 0 0 IN IP4 " + InetAddress.getLocalHost().getHostAddress() + "\r\n" +
+                     "o=- 0 0 IN IP4 " + FIXED_LOCAL_IP + "\r\n" +
                      "s=Sip Call\r\n" +
-                     "c=IN IP4 " + InetAddress.getLocalHost().getHostAddress() + "\r\n" +
+                     "c=IN IP4 " + FIXED_LOCAL_IP + "\r\n" +
                      "t=0 0\r\n" +
                      "m=audio " + localRtpPort + " RTP/AVP 0\r\n" +
                      "a=rtpmap:0 PCMU/8000\r\n";
 
         String invite = "INVITE sip:" + destinationIp + ":" + remoteSipPort + " SIP/2.0\r\n" +
-                        "Via: SIP/2.0/UDP " + InetAddress.getLocalHost().getHostAddress() + ":" + socket.getLocalPort() + "\r\n" +
-                        "From: <sip:client@" + InetAddress.getLocalHost().getHostAddress() + ">;tag=12345\r\n" +
+                        "Via: SIP/2.0/UDP " + FIXED_LOCAL_IP + ":" + socket.getLocalPort() + "\r\n" +
+                        "From: <sip:client@" + FIXED_LOCAL_IP + ">;tag=12345\r\n" +
                         "To: <sip:" + destinationIp + ":" + remoteSipPort + ">\r\n" +
                         "Call-ID: 1234567890@client\r\n" +
                         "CSeq: 1 INVITE\r\n" +
@@ -150,8 +152,8 @@ public class SipClient {
 
     public void sendAck() throws Exception {
         String ack = "ACK sip:" + remoInetAddress.getHostAddress() + ":" + remotePort + " SIP/2.0\r\n" +
-                     "Via: SIP/2.0/UDP " + InetAddress.getLocalHost().getHostAddress() + ":" + socket.getLocalPort() + "\r\n" +
-                     "From: <sip:client@" + InetAddress.getLocalHost().getHostAddress() + ">;tag=12345\r\n" +
+                     "Via: SIP/2.0/UDP " + FIXED_LOCAL_IP + ":" + socket.getLocalPort() + "\r\n" +
+                     "From: <sip:client@" + FIXED_LOCAL_IP + ">;tag=12345\r\n" +
                      "To: <sip:" + remoInetAddress.getHostAddress() + ":" + remotePort + ">\r\n" +
                      "Call-ID: 1234567890@client\r\n" +
                      "CSeq: 1 ACK\r\n\r\n";
@@ -163,8 +165,8 @@ public class SipClient {
 
     public void sendBye() throws Exception {
         String bye = "BYE sip:" + remoInetAddress.getHostAddress() + ":" + remotePort + " SIP/2.0\r\n" +
-                     "Via: SIP/2.0/UDP " + InetAddress.getLocalHost().getHostAddress() + ":" + socket.getLocalPort() + "\r\n" +
-                     "From: <sip:client@" + InetAddress.getLocalHost().getHostAddress() + ">;tag=12345\r\n" +
+                     "Via: SIP/2.0/UDP " + FIXED_LOCAL_IP + ":" + socket.getLocalPort() + "\r\n" +
+                     "From: <sip:client@" + FIXED_LOCAL_IP + ">;tag=12345\r\n" +
                      "To: <sip:" + remoInetAddress.getHostAddress() + ":" + remotePort + ">\r\n" +
                      "Call-ID: 1234567890@client\r\n" +
                      "CSeq: 2 BYE\r\n\r\n";
