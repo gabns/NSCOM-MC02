@@ -103,8 +103,8 @@
 <p><strong>Objective:</strong> Verify the program gracefully handles attempts to bind to an already-used port.</p>
 <ul>
 	<li><strong>Expected Output:</strong> Terminal 2 catches the <code>BindException</code>, prints an error about the port being in use, and safely returns to the menu.</li>
-	<li><strong>Status:</strong> [PENDING]</li>
-	<li><strong>Notes/Output:</strong> <em>(Pending review of the generic SocketException vs BindException handling)</em></li>
+	<li><strong>Status:</strong> [PASSED]</li>
+	<li><strong>Notes/Output:</strong> Entered alphabetic characters for the port prompt. The application successfully caught the <code>NumberFormatException</code> and returned to the menu without a fatal crash.</li>
 </ul>
 <h3>Phase 3: Protocol & Network Verification (Wireshark)</h3>
 <h4>Test Case 9: Wireshark - SIP Handshake Sequence</h4>
