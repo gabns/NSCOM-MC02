@@ -63,37 +63,51 @@ public class MediaStreamer {
         }).start();
     }
 
-    // Original File Sender
+// Natively Converting File Sender
     public void startSender(File audioFile, InetAddress dest, int port) {
         new Thread(() -> {
-            try (FileInputStream fis = new FileInputStream(audioFile);
-                 DatagramSocket rtpSocket = new DatagramSocket()) {
+            try (DatagramSocket rtpSocket = new DatagramSocket()) {
 
                 System.out.println("File RTP Sender Thread Started. Streaming to port: " + port);
                 
-                // Skip the 44-byte WAV header to avoid loud static pop
-                if (audioFile.getName().toLowerCase().endsWith(".wav")) {
-                    fis.skip(44); 
-                }
+                // 1. Get the original format of the uploaded file
+                AudioInputStream originalStream = AudioSystem.getAudioInputStream(audioFile);
+                
+                // 2. Define the format your RTP stream requires (8kHz, 8-bit, Mono, Signed)
+                AudioFormat targetFormat = new AudioFormat(8000, 8, 1, true, false);
+                
+                // 3. Ask Java to dynamically convert the original stream into your target format
+                AudioInputStream convertedStream = AudioSystem.getAudioInputStream(targetFormat, originalStream);
                 
                 byte[] buffer = new byte[160];
                 int seqNum = 0;
                 int timestamp = 0;
                 int ssrc = 12345;
 
-                while (isRunning && fis.read(buffer) != -1) {
-                    RtpPacket rtp = new RtpPacket(seqNum, timestamp, ssrc, buffer);
-                    byte[] packetData = rtp.toNetworkBytes();
+                // 4. Read directly from the converted stream (WAV header is automatically ignored)
+                int bytesRead;
+                while (isRunning && (bytesRead = convertedStream.read(buffer, 0, buffer.length)) != -1) {
+                    
+                    if (bytesRead > 0) {
+                        // Prevent buffer bleed by copying exactly what was read
+                        byte[] actualData = new byte[bytesRead];
+                        System.arraycopy(buffer, 0, actualData, 0, bytesRead);
+                        
+                        RtpPacket rtp = new RtpPacket(seqNum, timestamp, ssrc, actualData);
+                        byte[] packetData = rtp.toNetworkBytes();
 
-                    DatagramPacket packet = new DatagramPacket(packetData, packetData.length, dest, port);
-                    rtpSocket.send(packet);
+                        DatagramPacket packet = new DatagramPacket(packetData, packetData.length, dest, port);
+                        rtpSocket.send(packet);
 
-                    seqNum++;
-                    timestamp += 160;
+                        seqNum++;
+                        timestamp += 160;
 
-                    Thread.sleep(20); // 160 bytes at 8000Hz is exactly 20ms of audio
+                        Thread.sleep(20); // Maintain real-time playback speed
+                    }
                 }
                 
+                convertedStream.close();
+                originalStream.close();
                 System.out.println("File stream finished.");
 
             } catch (Exception e) {
